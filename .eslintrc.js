@@ -28,6 +28,7 @@ module.exports = {
   ],
   "rules": {
     "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/no-explicit-any": "error",
     "indent": [
       "error",
       2
@@ -43,6 +44,6 @@ module.exports = {
     "semi": [
       "error",
       "always"
-    ]
+    ],
   }
 };

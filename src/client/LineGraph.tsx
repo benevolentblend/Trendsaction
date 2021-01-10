@@ -1,67 +1,53 @@
 import React from "react";
-import { letterFrequency } from "@visx/mock-data";
-import { Group } from "@visx/group";
-import { Bar } from "@visx/shape";
-import { AxisLeft, AxisBottom } from "@visx/axis";
-import { scaleLinear, scaleBand } from "@visx/scale";
 
-// We'll use some mock data from `@visx/mock-data` for this.
-const data = letterFrequency;
+import {
+  AnimatedAxis, // any of these can be non-animated equivalents
+  AnimatedGrid,
+  AnimatedLineSeries,
+  XYChart,
+  Tooltip,
+} from "@visx/xychart";
 
-// Define the graph dimensions and margins
-const width = 500;
-const height = 500;
-const margin = { top: 20, bottom: 20, left: 20, right: 20 };
+const data1 = [
+  { x: "2020-01-01", y: 50 },
+  { x: "2020-01-02", y: 10 },
+  { x: "2020-01-03", y: 20 },
+];
 
-// Then we'll create some bounds
-const xMax = width - margin.left - margin.right;
-const yMax = height - margin.top - margin.bottom;
+const data2 = [
+  { x: "2020-01-01", y: 30 },
+  { x: "2020-01-02", y: 40 },
+  { x: "2020-01-03", y: 80 },
+];
 
-// We'll make some helpers to get at the data we want
-const x = d => d.letter;
-const y = d => +d.frequency * 100;
+const accessors = {
+  xAccessor: d => d.x,
+  yAccessor: d => d.y,
+};
 
-// And then scale the graph by our data
-const xScale = scaleBand({
-  range: [0, xMax],
-  round: true,
-  domain: data.map(x),
-  padding: 0.4,
-});
-const yScale = scaleLinear({
-  range: [yMax, 0],
-  round: true,
-  domain: [0, Math.max(...data.map(y))],
-});
+const render = () => (
+  <XYChart height={300} xScale={{ type: "band" }} yScale={{ type: "linear" }}>
+    <AnimatedAxis orientation="bottom" />
+    <AnimatedGrid columns={false} numTicks={4} />
+    <AnimatedLineSeries dataKey="Line 1" data={data1} {...accessors} />
+    <AnimatedLineSeries dataKey="Line 2" data={data2} {...accessors} />
+    <Tooltip
+      snapTooltipToDatumX
+      snapTooltipToDatumY
+      showVerticalCrosshair
+      showSeriesGlyphs
+      renderTooltip={({ tooltipData, colorScale }) => (
+        <div>
+          <div style={{ color: colorScale(tooltipData.nearestDatum.key) }}>
+            {tooltipData.nearestDatum.key}
+          </div>
+          {accessors.xAccessor(tooltipData.nearestDatum.datum)}
+          {", "}
+          {accessors.yAccessor(tooltipData.nearestDatum.datum)}
+        </div>
+      )}
+    />
+  </XYChart>
+);
 
-// Compose together the scale and accessor functions to get point functions
-const compose = (scale, accessor) => data => scale(accessor(data));
-const xPoint = compose(xScale, x);
-const yPoint = compose(yScale, y);
-
-// Finally we'll embed it all in an SVG
-function BarGraph() {
-  return (
-    <svg width={width} height={height}>
-      {data.map((d, i) => {
-        const barHeight = yMax - yPoint(d);
-        return (
-          <Group key={`bar-${i}`}>
-            <Bar
-              x={margin.left + xPoint(d)}
-              y={yMax - barHeight}
-              height={barHeight}
-              width={xScale.bandwidth()}
-              fill="#fc2e1c"
-            />
-            <AxisLeft scale={yScale} left={margin.left} />
-            <AxisBottom scale={xScale} top={yMax} left={margin.left} numTicks={26} />
-
-          </Group>
-        );
-      })}
-    </svg>
-  );
-}
-
-export default BarGraph;
+export default render;
