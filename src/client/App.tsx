@@ -7,7 +7,7 @@ const onSpace = () => {
 
 const App = () => {
   return (
-    <div className="min-vh-100 d-flex justify-content-center align-items-center" onMouseUp={(event) => {
+    <div className="d-flex justify-content-center align-items-center" onMouseUp={(event) => {
       onSpace();
       console.log(event);
     }}>
