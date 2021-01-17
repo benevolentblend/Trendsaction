@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import pdf from "pdf-parse";
+import * as pdf from "pdf-parse";
 import { captureData, regexClean, processAccounts, validateAccounts } from "./pdfreaderHelper";
 
 const pdfReader = async (fileName:string) =>  {
@@ -11,6 +11,9 @@ const pdfReader = async (fileName:string) =>  {
   const capturedData = captureData(rawPDFText);
   const cleanPDFText = regexClean(rawPDFText);
   const processedAccounts = processAccounts(cleanPDFText);
+
+  console.log(processedAccounts);
+
   const isValid = validateAccounts(capturedData.accounts, processedAccounts);
 
 

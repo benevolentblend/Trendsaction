@@ -30,14 +30,33 @@ const replaceWithNewLines = [
 
 interface ReplacementStep {
   regex: RegExp | string;
-  replacement: RegExp | string;
+  replacement: string;
 }
 
 interface Account {
   name: string;
   id: string;
-  balance: string;
+  balance: number;
   amount?:number;
+}
+
+interface Transaction {
+  balance: number;
+  amount: number;
+  date: string;
+  type: "Withdrawal" | "Deposit";
+  description: string;
+}
+
+interface CondensedTransaction {
+  withdrawal: number;
+  deposit: number;
+  date: string;
+}
+
+interface ProcessedAccount extends Account {
+  transactions: Transaction[];
+  condenseTransactions: CondensedTransaction[];
 }
 
 const formatTransactionTables: ReplacementStep[] = [
@@ -85,7 +104,7 @@ const formatTransations = [
 const processAccount = /;:;(.*);([0-9]{4});(-?[0-9,]{1,}\.[0-9]{2})/;
 const processTransaction = /([0-9]{2}\/[0-9]{2});(-?[0-9,]{1,}\.[0-9]{2});(-?[0-9,]{1,}\.[0-9]{2});(Withdrawal|Deposit);(.*);/;
 
-const processRegexSteps = (data, steps: ReplacementStep[]) => {
+const processRegexSteps = (data: string, steps: ReplacementStep[]) => {
   let output = data;
   steps.forEach(step => {
     const { regex, replacement } = step;
@@ -95,19 +114,19 @@ const processRegexSteps = (data, steps: ReplacementStep[]) => {
   return output;
 };
 
-const captureHeaderAccounts = account => {
+const captureHeaderAccounts = (account: string): Account => {
   // Reset regex pointer
   captureAccounts.lastIndex = 0;
   const results = captureAccounts.exec(account);
   const [, name, id, balance] = results;
-  const result = { name, id, balance: balance.replace(",", "") };
+  const result = { name, id, balance: +balance.replace(",", "") };
   return result;
 };
 
 export const captureData = (rawData:string) => {
   const dateInformation = captureDate.exec(rawData);
   const accountRegs = rawData.match(captureAccounts);
-  const accounts = accountRegs.map(captureHeaderAccounts);
+  const accounts:Account[] = accountRegs.map(captureHeaderAccounts);
   const balanceTotalResult = captureBalanceTotal.exec(rawData);
   const balanceTotal = balanceTotalResult[1];
   const [, statementMonth, statementYear] = dateInformation;
@@ -122,7 +141,7 @@ export const captureData = (rawData:string) => {
   };
 };
 
-export const regexClean = data => {
+export const regexClean = (data: string): string => {
   let output = data;
 
   //   fs.writeFileSync("test/original.txt", data, "utf8");
@@ -147,30 +166,56 @@ export const regexClean = data => {
   return output;
 };
 
-export const processAccounts = cleanText => {
+export const processAccounts = (cleanText: string):ProcessedAccount[] =>  {
   const cleanPDFLines = cleanText.split("\n");
-  const processedAccounts = [];
+  const processedAccounts:ProcessedAccount[] = [];
+  let currentTransaction = "";
   cleanPDFLines.forEach(line => {
     if (processAccount.test(line)) {
       const [, name, id, balance] = processAccount.exec(line);
-
-      processedAccounts.push({ name, id, balance, transactions: [] });
+      processedAccounts.push({ name, id, balance: +balance, transactions: [], condenseTransactions: [] });
     } else if (processTransaction.test(line)) {
-      const [, date, amount, currentBalance, type, description] = processTransaction.exec(line);
+      const [, date, rawAmount, rawCurrentBalance, rawType, description] = processTransaction.exec(line);
+      const type = rawType === "Withdrawal" ? "Withdrawal" : "Deposit"; 
+      const amount = +rawAmount;
+      const currentBalance = +rawCurrentBalance;
+      const currentAccount = processedAccounts[processedAccounts.length - 1];
 
-      processedAccounts[processedAccounts.length - 1].transactions.push({
+      currentAccount.transactions.push({
         date,
         amount,
         balance: currentBalance,
         type,
         description,
       });
+
+      if (currentTransaction !== date) {
+        currentAccount.condenseTransactions.push({
+          date,
+          withdrawal: 0,
+          deposit: 0,
+        });
+
+        currentTransaction = date;
+      }
+
+      const currentCondenseTransaction = currentAccount.condenseTransactions[currentAccount.condenseTransactions.length - 1];
+      
+      switch (type) {
+      case "Withdrawal":
+        currentCondenseTransaction.withdrawal += amount;
+        break;
+      case "Deposit":
+        currentCondenseTransaction.deposit += amount;
+        break;
+      default:
+      }
     }
   });
   return processedAccounts;
 };
 
-export const validateAccounts = (headerAccounts: Account[], processedAccounts: Account[]) => {
+export const validateAccounts = (headerAccounts: Account[], processedAccounts: Account[]): boolean => {
   let valid = true;
 
   if (headerAccounts.length !== processedAccounts.length) {

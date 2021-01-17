@@ -12,19 +12,21 @@ import {
 interface LineData {
   x: string;
   y: number;
+  date: string;
 }
   
 const data1: LineData[] = [
-  { x: "2020-01-01", y: 50 },
-  { x: "2020-01-02", y: 10 },
-  { x: "2020-01-03", y: 20 },
+  { x: "2020-01-01-transaction-1", y: 50, date: "2020-01-01"},
+  { x: "2020-01-01-transaction-2", y: 51, date: "2020-01-01"},
+  { x: "2020-01-02-transaction-1", y: 10, date: "2020-01-02"},
+  { x: "2020-01-03-transaction-1", y: 20, date: "2020-01-03"},
 ];
   
 const data2: LineData[] = [
-  { x: "2020-01-01", y: 30 },
-  { x: "2020-01-02", y: 40 },
-  { x: "2020-01-03", y: 80 },
-  { x: "2020-01-04", y: 89 },
+  { x: "2020-01-01-transaction-1", y: 30, date: "2020-01-01"},
+  { x: "2020-01-02-transaction-1", y: 40, date: "2020-01-02" },
+  { x: "2020-01-03-transaction-1", y: 80, date: "2020-01-03" },
+  { x: "2020-01-04-transaction-1", y: 89, date: "2020-01-04" },
 ];
   
 const accessors = {
@@ -39,7 +41,7 @@ const LineGraph = () => {
 
   const addRandomData = () => {
     setData1((oldD1) => {
-      const lastDay = new Date(oldD1[oldD1.length - 1].x);
+      const lastDay = new Date(oldD1[oldD1.length - 1].date);
       console.log(lastDay);
       lastDay.setDate(lastDay.getUTCDate() + 1);
       console.log(lastDay);
@@ -52,11 +54,12 @@ const LineGraph = () => {
       const formattedYear = lastDay.getUTCFullYear();
   
       const formattedDate = `${formattedYear}-${formattedMonth}-${formattedDay}`;
+      const x = `${formattedDate}-transaction-1`;
   
       console.log(formattedDate);
   
   
-      const nextPoint:LineData = { x: formattedDate, y: Math.floor(Math.random() * 80)};
+      const nextPoint:LineData = { x, y: Math.floor(Math.random() * 80), date: formattedDate};
     
       console.log(nextPoint);
       
