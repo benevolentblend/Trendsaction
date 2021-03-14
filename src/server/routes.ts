@@ -6,7 +6,6 @@ const router = express.Router();
 
 router.get("/api/fake-data", async (req, res) => {
   const result = await promises.readFile("/home/ben/Documents/11-2020.json", "utf-8");
-  console.log(result);
   const data = JSON.parse(result);
   res.json(data);
 });

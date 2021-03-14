@@ -1,3 +1,10 @@
+import { Account, ProcessedAccount } from "../shared/Models";
+
+interface ReplacementStep {
+  regex: RegExp | string;
+  replacement: string;
+}
+
 const captureDate = /Statement\sFor\n([0-1][0-9])\/[0-3][0-9]\/([0-9]{4})\s-\s[0-1][0-9]\/[0-3][0-9]\/[0-9]{4}/;
 const captureAccounts = /(.*)ID\s([0-9]{4})\$?([0-9,]{1,}\.[0-9]{2})\n/gm;
 const captureBalanceTotal = /Account\sBalance\sTotal\n\$?(.*)\n/;
@@ -27,37 +34,6 @@ const replaceWithNewLines = [
   " \n",
   "\n\n\n\n\n",
 ];
-
-interface ReplacementStep {
-  regex: RegExp | string;
-  replacement: string;
-}
-
-interface Account {
-  name: string;
-  id: string;
-  balance: number;
-  amount?:number;
-}
-
-interface Transaction {
-  balance: number;
-  amount: number;
-  date: string;
-  type: "Withdrawal" | "Deposit";
-  description: string;
-}
-
-interface CondensedTransaction {
-  withdrawal: number;
-  deposit: number;
-  date: string;
-}
-
-interface ProcessedAccount extends Account {
-  transactions: Transaction[];
-  condenseTransactions: CondensedTransaction[];
-}
 
 const formatTransactionTables: ReplacementStep[] = [
   {
@@ -173,7 +149,7 @@ export const processAccounts = (cleanText: string):ProcessedAccount[] =>  {
   cleanPDFLines.forEach(line => {
     if (processAccount.test(line)) {
       const [, name, id, balance] = processAccount.exec(line);
-      processedAccounts.push({ name, id, balance: +balance, transactions: [], condenseTransactions: [] });
+      processedAccounts.push({ name, id, balance: +balance, transactions: [], detailedTransactions: [] });
     } else if (processTransaction.test(line)) {
       const [, date, rawAmount, rawCurrentBalance, rawType, description] = processTransaction.exec(line);
       const type = rawType === "Withdrawal" ? "Withdrawal" : "Deposit"; 
@@ -181,7 +157,7 @@ export const processAccounts = (cleanText: string):ProcessedAccount[] =>  {
       const currentBalance = +rawCurrentBalance;
       const currentAccount = processedAccounts[processedAccounts.length - 1];
 
-      currentAccount.transactions.push({
+      currentAccount.detailedTransactions.push({
         date,
         amount,
         balance: currentBalance,
@@ -190,26 +166,17 @@ export const processAccounts = (cleanText: string):ProcessedAccount[] =>  {
       });
 
       if (currentTransaction !== date) {
-        currentAccount.condenseTransactions.push({
+        currentAccount.transactions.push({
           date,
-          withdrawal: 0,
-          deposit: 0,
+          balance: 0,
         });
 
         currentTransaction = date;
       }
 
-      const currentCondenseTransaction = currentAccount.condenseTransactions[currentAccount.condenseTransactions.length - 1];
+      const currentCondenseTransaction = currentAccount.transactions[currentAccount.transactions.length - 1];
       
-      switch (type) {
-      case "Withdrawal":
-        currentCondenseTransaction.withdrawal += amount;
-        break;
-      case "Deposit":
-        currentCondenseTransaction.deposit += amount;
-        break;
-      default:
-      }
+      currentCondenseTransaction.balance = currentBalance;
     }
   });
   return processedAccounts;
