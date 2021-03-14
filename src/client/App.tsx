@@ -1,19 +1,24 @@
 import { ParentSize } from "@visx/responsive";
 import React, { useEffect, useState } from "react";
-import { Transaction } from "../shared/Models";
+import { ProcessedAccount, TransactionApiReponse } from "../shared/Models";
 import TransactionGraph from "./TransactionGraph";
 
 const App = () => {
 
-  const [transactions, setData] = useState<Transaction[]>([]);
+  const [accounts, setData] = useState<ProcessedAccount[]>([]);
+  const [currentAccount, setCurrentAccount] = useState(-1); 
 
   const fetchData = async () => {
-    const apiResponse = await (await fetch("/api/fake-data")).json();
+    const apiResponse: TransactionApiReponse = await (await fetch("/api/fake-data")).json();
 
-    console.log({apiResponse});
-    console.log(apiResponse.processAccounts[2].transactions);
+    if (apiResponse.pdfInfo.accounts.length > 0) {
+      setData([...apiResponse.processedAccounts.filter((account) => account.transactions.length > 0)]);
+      setCurrentAccount(0);
+    }
+  };
 
-    setData([...apiResponse.processAccounts[2].transactions]);
+  const updateCurrentAccount = (value: number) => {
+    setCurrentAccount(value);
   };
 
   useEffect(()  => {
@@ -21,19 +26,38 @@ const App = () => {
   }, []);
 
   return (
-    <div className="d-flex justify-content-center align-items-center">
-      <ParentSize className="min-vh-100">
-        {({height, width}) => (
-          <TransactionGraph {...{
-            height,
-            width,
-            accountName: "Checking Account",
-            transactions,           
-          }} />
-        )}
-      </ParentSize>
-      
-    </div>
+    <>
+      <nav className="navbar navbar-dark bg-dark">
+        <div className="container-fluid">
+          <a className="navbar-brand" href="#">Navbar</a>
+        </div>
+      </nav>
+      {accounts.length > 0 && currentAccount >= 0 ? (
+        <>
+          <div className="h-50 w-100 d-inline-block">
+            <ParentSize>
+              {({height, width}) => (
+                <TransactionGraph {...{
+                  height,
+                  width,
+                  account: accounts[currentAccount],           
+                }} />
+              )}
+            </ParentSize>
+          </div>
+          <select onChange={(event) => {
+            updateCurrentAccount(+event.currentTarget.value);
+          }}>
+            {accounts.map((account, i) => (
+              <option value={i} key={account.id}>{account.name}</option>
+            ))
+            }
+          </select>
+        </>
+      ) : ""}
+
+    </>
+    
   );
 };
 

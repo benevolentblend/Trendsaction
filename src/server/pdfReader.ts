@@ -12,12 +12,11 @@ const pdfReader = async (fileName:string) =>  {
   const cleanPDFText = regexClean(rawPDFText);
   const processedAccounts = processAccounts(cleanPDFText);
 
-  console.log(processedAccounts);
-
   const isValid = validateAccounts(capturedData.accounts, processedAccounts);
 
+  if (!isValid) return "Problem processing document";
 
-  return {"data": capturedData, "processAccounts": processedAccounts, isValid};
+  return { pdfInfo: capturedData, processedAccounts };
 };
 
 export default pdfReader;

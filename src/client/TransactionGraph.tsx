@@ -6,7 +6,7 @@ import {
   XYChart,
   Tooltip,
 } from "@visx/xychart";
-import { Transaction } from "../shared/Models";
+import { ProcessedAccount, Transaction } from "../shared/Models";
 import { RenderTooltipParams } from "@visx/xychart/lib/components/Tooltip";
 import { timeFormat } from "d3-time-format";
 import {min, max} from "d3-array";
@@ -22,7 +22,6 @@ const getDate = (d: Transaction) => {
   return data;
 };
 const getBalance = (d: Transaction) => {
-  console.log({d});
   return d.balance;
 };
 
@@ -37,11 +36,11 @@ export type AreaProps = {
 };
 
 export type TransactionGraph = {
-  accountName: string;
-  transactions: Transaction[];
+  account: ProcessedAccount;
 };
 
-export default function TransactionGraph({width, height, accountName, transactions}: AreaProps & TransactionGraph) {
+export default function TransactionGraph({width, height, account}: AreaProps & TransactionGraph) {
+  const { transactions } = account;
 
   const tranctionMinAndMax = useMemo(() => {
     return {
@@ -56,11 +55,11 @@ export default function TransactionGraph({width, height, accountName, transactio
   ];
 
   return (
-    <XYChart height={height} width={width} xScale={{ type: "time" }} yScale={{ type: "linear", domain: yDomain}}>
+    <XYChart height={height} width={width} xScale={{ type: "time" }} yScale={{ type: "linear", domain: yDomain, round: true}}>
       <AnimatedAxis orientation="left" />
       <AnimatedAxis orientation="bottom" />
       <AnimatedGrid />
-      <AnimatedLineSeries dataKey={accountName} data={transactions} {...accessors} />
+      <AnimatedLineSeries dataKey={account.name} data={transactions} {...accessors} />
       <Tooltip
         snapTooltipToDatumX
         snapTooltipToDatumY

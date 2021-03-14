@@ -2,7 +2,6 @@ export interface Account {
   name: string;
   id: string;
   balance: number;
-  amount?: number;
 }
 
 export interface Transaction {
@@ -19,4 +18,15 @@ export interface DetailedTransaction extends Transaction {
 export interface ProcessedAccount extends Account {
   transactions: Transaction[];
   detailedTransactions: DetailedTransaction[];
+}
+
+type PdfInfo = {
+  statementMonth: string;
+  statementYear: string;
+  accounts: Account[];
+}
+
+export interface TransactionApiReponse {
+  pdfInfo: PdfInfo;
+  processedAccounts: ProcessedAccount[];
 }
